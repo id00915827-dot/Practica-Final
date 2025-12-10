@@ -1,26 +1,30 @@
 package model;
 
-import model.backup.QuestionBackupIO;
-import model.backup.QuestionBackupIOException;
-import model.repository.IRepository;
-import model.repository.RepositoryException;
-
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import model.backup.QuestionBackupIO;
+import model.backup.QuestionBackupIOException;
+import model.repository.IRepository;
+import model.repository.RepositoryException;
 
 public class Model {
 
     private final IRepository repositorio;
     private final QuestionBackupIO gestorCopias;
 
+    private Exam examenActual;
+
     public Model(IRepository repositorio, QuestionBackupIO gestorCopias) {
         this.repositorio = repositorio;
         this.gestorCopias = gestorCopias;
     }
+
+    //  CRUD 
 
     public List<Question> obtenerTodasLasPreguntas() throws RepositoryException {
         return repositorio.getAllQuestions();
@@ -59,7 +63,7 @@ public class Model {
         repositorio.removeQuestion(pregunta);
     }
 
-    // JSON backup 
+    //  JSON backup 
 
     public int exportarPreguntas(String nombreFichero)
             throws QuestionBackupIOException, RepositoryException {
@@ -96,6 +100,82 @@ public class Model {
         return contador;
     }
 
+    //  EXAMEN 
+
+    public List<String> obtenerTemasDisponibles() throws RepositoryException {
+        List<Question> preguntas = repositorio.getAllQuestions();
+        HashSet<String> temas = new HashSet<>();
+        for (Question pregunta : preguntas) {
+            if (pregunta.getTopics() != null) {
+                temas.addAll(pregunta.getTopics());
+            }
+        }
+        List<String> lista = new ArrayList<>(temas);
+        lista.sort(String::compareTo);
+        return lista;
+    }
+
+    public void iniciarExamen(String tema, int numeroPreguntas) throws RepositoryException {
+        List<Question> todas = repositorio.getAllQuestions();
+        List<Question> seleccionadas = new ArrayList<>();
+
+        String temaMayus = tema == null ? "" : tema.toUpperCase(Locale.ROOT);
+
+        for (Question pregunta : todas) {
+            if ("TODOS".equalsIgnoreCase(tema)) {
+                seleccionadas.add(pregunta);
+            } else if (pregunta.getTopics() != null && pregunta.getTopics().contains(temaMayus)) {
+                seleccionadas.add(pregunta);
+            }
+        }
+
+        java.util.Collections.shuffle(seleccionadas);
+
+        if (numeroPreguntas > 0 && numeroPreguntas < seleccionadas.size()) {
+            seleccionadas = new ArrayList<>(seleccionadas.subList(0, numeroPreguntas));
+        }
+
+        this.examenActual = new Exam(seleccionadas);
+    }
+
+    public Question obtenerPreguntaActualExamen() {
+        if (examenActual == null) {
+            return null;
+        }
+        return examenActual.getPreguntaActual();
+    }
+
+    public void responderPreguntaActual(int indiceOpcion) {
+        if (examenActual != null) {
+            examenActual.responderActual(indiceOpcion);
+        }
+    }
+
+    public void saltarPreguntaActual() {
+        if (examenActual != null) {
+            examenActual.saltarActual();
+        }
+    }
+
+    public boolean examenHaTerminado() {
+        return examenActual == null || examenActual.haTerminado();
+    }
+
+    public String obtenerResumenExamen() {
+        if (examenActual == null) {
+            return "No hay examen en curso.";
+        }
+        int total = examenActual.getTotalPreguntas();
+        int aciertos = examenActual.contarAciertos();
+        int fallos = examenActual.contarFallos();
+        int sinResponder = examenActual.contarSinResponder();
+
+        return "Resumen examen -> Total: " + total
+                + ", aciertos: " + aciertos
+                + ", fallos: " + fallos
+                + ", sin responder: " + sinResponder + ".";
+    }
+
 
     private void validarPregunta(Question pregunta) throws RepositoryException {
         if (pregunta == null) {
@@ -125,4 +205,3 @@ public class Model {
         }
     }
 }
-

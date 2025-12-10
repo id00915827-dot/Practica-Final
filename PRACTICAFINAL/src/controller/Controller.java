@@ -79,7 +79,7 @@ public class Controller {
         }
     }
 
-    // Copias JSON 
+    //  Copias JSON 
 
     public void exportarPreguntas(String nombreFichero) {
         try {
@@ -97,5 +97,44 @@ public class Controller {
         } catch (QuestionBackupIOException | RepositoryException e) {
             vista.mostrarError("Error al importar preguntas: " + e.getMessage());
         }
+    }
+
+    //  EXAMEN 
+
+    public List<String> obtenerTemasDisponibles() {
+        try {
+            return modelo.obtenerTemasDisponibles();
+        } catch (RepositoryException e) {
+            vista.mostrarError("Error al obtener los temas: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    public void iniciarExamen(String tema, int numeroPreguntas) {
+        try {
+            modelo.iniciarExamen(tema, numeroPreguntas);
+        } catch (RepositoryException e) {
+            vista.mostrarError("Error al iniciar el examen: " + e.getMessage());
+        }
+    }
+
+    public boolean examenHaTerminado() {
+        return modelo.examenHaTerminado();
+    }
+
+    public Question obtenerPreguntaActualExamen() {
+        return modelo.obtenerPreguntaActualExamen();
+    }
+
+    public void responderPreguntaActual(int indiceOpcion) {
+        modelo.responderPreguntaActual(indiceOpcion);
+    }
+
+    public void saltarPreguntaActual() {
+        modelo.saltarPreguntaActual();
+    }
+
+    public String obtenerResumenExamen() {
+        return modelo.obtenerResumenExamen();
     }
 }

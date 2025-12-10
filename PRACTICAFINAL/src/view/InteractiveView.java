@@ -5,6 +5,8 @@ import controller.Controller;
 import model.Option;
 import model.Question;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +19,7 @@ public class InteractiveView extends BaseView {
 
         while (!salir) {
             mostrarMenuPrincipal();
-            int opcion = Esdia.readInt("Elige una opción: ", 0, 2);
+            int opcion = Esdia.readInt("Elige una opción: ", 0, 3);
 
             switch (opcion) {
                 case 1:
@@ -25,6 +27,9 @@ public class InteractiveView extends BaseView {
                     break;
                 case 2:
                     gestionarCopias();
+                    break;
+                case 3:
+                    ejecutarModoExamen();
                     break;
                 case 0:
                     salir = true;
@@ -43,6 +48,7 @@ public class InteractiveView extends BaseView {
         System.out.println("===== Examinator 3000 =====");
         System.out.println("1. Gestión de preguntas");
         System.out.println("2. Importar / Exportar preguntas");
+        System.out.println("3. Modo examen");
         System.out.println("0. Salir");
     }
 
@@ -232,6 +238,66 @@ public class InteractiveView extends BaseView {
         System.out.print(mensaje);
         java.util.Scanner sc = new java.util.Scanner(System.in);
         return sc.nextLine();
+    }
+
+    //  MODO EXAMEN 
+
+    private void ejecutarModoExamen() {
+        List<String> temas = controlador.obtenerTemasDisponibles();
+        if (temas.isEmpty()) {
+            mostrarMensaje("No hay preguntas para generar un examen.");
+            return;
+        }
+
+        System.out.println();
+        System.out.println("=== Temas disponibles ===");
+        System.out.println("0. TODOS");
+        for (int i = 0; i < temas.size(); i++) {
+            System.out.println((i + 1) + ". " + temas.get(i));
+        }
+
+        int opcionTema = Esdia.readInt("Elige un tema (número): ", 0, temas.size());
+        String temaSeleccionado;
+        if (opcionTema == 0) {
+            temaSeleccionado = "TODOS";
+        } else {
+            temaSeleccionado = temas.get(opcionTema - 1);
+        }
+
+        int numeroPreguntas = Esdia.readInt("Número de preguntas del examen: ", 1, 1000);
+
+        controlador.iniciarExamen(temaSeleccionado, numeroPreguntas);
+        Instant inicio = Instant.now();
+
+        while (!controlador.examenHaTerminado()) {
+            Question pregunta = controlador.obtenerPreguntaActualExamen();
+            if (pregunta == null) {
+                break;
+            }
+
+            System.out.println();
+            System.out.println("Pregunta:");
+            System.out.println(pregunta.getStatement());
+            List<Option> opciones = pregunta.getOptions();
+            for (int i = 0; i < opciones.size(); i++) {
+                System.out.println((i + 1) + ". " + opciones.get(i).getText());
+            }
+            System.out.println("0. Saltar pregunta");
+
+            int respuesta = Esdia.readInt("Tu respuesta: ", 0, opciones.size());
+            if (respuesta == 0) {
+                controlador.saltarPreguntaActual();
+            } else {
+                controlador.responderPreguntaActual(respuesta - 1);
+            }
+        }
+
+        Instant fin = Instant.now();
+        long segundos = Duration.between(inicio, fin).getSeconds();
+
+        System.out.println();
+        System.out.println(controlador.obtenerResumenExamen());
+        System.out.println("Tiempo empleado: " + segundos + " segundos.");
     }
 
     //  COPIAS JSON 
