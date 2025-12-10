@@ -1,0 +1,8 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "c:\\Users\\HP\\Downloads\\biblioteca11 (3).jar",
+        "c:\\Users\\HP\\Downloads\\gson-2.10.1 (1).jar",
+        "c:\\Users\\HP\\Downloads\\jadapter-for-native-tts-0.12.0.jar"
+    ]
+}
