@@ -17,11 +17,14 @@ public class InteractiveView extends BaseView {
 
         while (!salir) {
             mostrarMenuPrincipal();
-            int opcion = Esdia.readInt("Elige una opción: ", 0, 1);
+            int opcion = Esdia.readInt("Elige una opción: ", 0, 2);
 
             switch (opcion) {
                 case 1:
                     gestionarPreguntas();
+                    break;
+                case 2:
+                    gestionarCopias();
                     break;
                 case 0:
                     salir = true;
@@ -39,8 +42,11 @@ public class InteractiveView extends BaseView {
         System.out.println();
         System.out.println("===== Examinator 3000 =====");
         System.out.println("1. Gestión de preguntas");
+        System.out.println("2. Importar / Exportar preguntas");
         System.out.println("0. Salir");
     }
+
+    //  GESTIÓN PREGUNTAS 
 
     private void gestionarPreguntas() {
         boolean volver = false;
@@ -186,8 +192,8 @@ public class InteractiveView extends BaseView {
 
             String correctoTexto = leerTextoOpcional("¿Es correcta? (s/n) (Enter para mantener): ");
             if (!correctoTexto.isEmpty()) {
-                boolean correcta = correctoTexto.trim().equalsIgnoreCase("s")
-                        || correctoTexto.trim().equalsIgnoreCase("si");
+                String valor = correctoTexto.trim().toLowerCase();
+                boolean correcta = valor.equals("s") || valor.equals("si");
                 opcion.setCorrect(correcta);
             }
         }
@@ -226,6 +232,37 @@ public class InteractiveView extends BaseView {
         System.out.print(mensaje);
         java.util.Scanner sc = new java.util.Scanner(System.in);
         return sc.nextLine();
+    }
+
+    //  COPIAS JSON 
+
+    private void gestionarCopias() {
+        boolean volver = false;
+        while (!volver) {
+            System.out.println();
+            System.out.println("=== Copias de seguridad ===");
+            System.out.println("1. Exportar preguntas a JSON");
+            System.out.println("2. Importar preguntas desde JSON");
+            System.out.println("0. Volver");
+
+            int opcion = Esdia.readInt("Elige una opción: ", 0, 2);
+            switch (opcion) {
+                case 1:
+                    String nombreExportar = Esdia.readString("Nombre del fichero (sin ruta, sin extensión): ");
+                    controlador.exportarPreguntas(nombreExportar);
+                    break;
+                case 2:
+                    String nombreImportar = Esdia.readString("Nombre del fichero (sin ruta, sin extensión): ");
+                    controlador.importarPreguntas(nombreImportar);
+                    break;
+                case 0:
+                    volver = true;
+                    break;
+                default:
+                    mostrarError("Opción no válida.");
+                    break;
+            }
+        }
     }
 
     @Override

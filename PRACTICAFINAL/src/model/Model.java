@@ -1,18 +1,25 @@
 package model;
 
+import model.backup.QuestionBackupIO;
+import model.backup.QuestionBackupIOException;
 import model.repository.IRepository;
 import model.repository.RepositoryException;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class Model {
 
     private final IRepository repositorio;
+    private final QuestionBackupIO gestorCopias;
 
-    public Model(IRepository repositorio) {
+    public Model(IRepository repositorio, QuestionBackupIO gestorCopias) {
         this.repositorio = repositorio;
+        this.gestorCopias = gestorCopias;
     }
 
     public List<Question> obtenerTodasLasPreguntas() throws RepositoryException {
@@ -52,6 +59,44 @@ public class Model {
         repositorio.removeQuestion(pregunta);
     }
 
+    // JSON backup 
+
+    public int exportarPreguntas(String nombreFichero)
+            throws QuestionBackupIOException, RepositoryException {
+
+        List<Question> preguntas = repositorio.getAllQuestions();
+        gestorCopias.exportQuestions(preguntas, nombreFichero);
+        return preguntas.size();
+    }
+
+    public int importarPreguntas(String nombreFichero)
+            throws QuestionBackupIOException, RepositoryException {
+
+        List<Question> actuales = repositorio.getAllQuestions();
+        Set<UUID> idsActuales = actuales.stream()
+                .map(Question::getId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+
+        List<Question> importadas = gestorCopias.importQuestions(nombreFichero);
+        int contador = 0;
+
+        for (Question pregunta : importadas) {
+            UUID id = pregunta.getId();
+            if (id == null || idsActuales.contains(id)) {
+                continue;
+            }
+            validarPregunta(pregunta);
+            normalizarPregunta(pregunta);
+            repositorio.addQuestion(pregunta);
+            idsActuales.add(pregunta.getId());
+            contador++;
+        }
+
+        return contador;
+    }
+
+
     private void validarPregunta(Question pregunta) throws RepositoryException {
         if (pregunta == null) {
             throw new RepositoryException("La pregunta no puede ser nula.");
@@ -80,3 +125,4 @@ public class Model {
         }
     }
 }
+

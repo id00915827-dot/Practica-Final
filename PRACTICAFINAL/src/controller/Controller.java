@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import model.Model;
 import model.Question;
+import model.backup.QuestionBackupIOException;
 import model.repository.RepositoryException;
 import view.BaseView;
 
@@ -26,6 +27,8 @@ public class Controller {
     public void finalizarAplicacion() {
         vista.end();
     }
+
+    //  CRUD 
 
     public List<Question> obtenerPreguntas() {
         try {
@@ -73,6 +76,26 @@ public class Controller {
             vista.mostrarMensaje("Pregunta eliminada correctamente.");
         } catch (RepositoryException e) {
             vista.mostrarError("Error al eliminar la pregunta: " + e.getMessage());
+        }
+    }
+
+    // Copias JSON 
+
+    public void exportarPreguntas(String nombreFichero) {
+        try {
+            int total = modelo.exportarPreguntas(nombreFichero);
+            vista.mostrarMensaje("Preguntas exportadas a " + nombreFichero + ".json (" + total + " preguntas).");
+        } catch (QuestionBackupIOException | RepositoryException e) {
+            vista.mostrarError("Error al exportar preguntas: " + e.getMessage());
+        }
+    }
+
+    public void importarPreguntas(String nombreFichero) {
+        try {
+            int importadas = modelo.importarPreguntas(nombreFichero);
+            vista.mostrarMensaje("Importadas " + importadas + " preguntas desde " + nombreFichero + ".json");
+        } catch (QuestionBackupIOException | RepositoryException e) {
+            vista.mostrarError("Error al importar preguntas: " + e.getMessage());
         }
     }
 }
