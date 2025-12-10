@@ -4,10 +4,20 @@ import java.io.Serializable;
 
 public class Option implements Serializable {
 
+    private static final long serialVersionUID = 1L;
 
     private String text;
     private String rationale;
     private boolean correct;
+
+    public Option() {
+    }
+
+    public Option(String texto, String justificacion, boolean correcta) {
+        this.text = texto;
+        this.rationale = justificacion;
+        this.correct = correcta;
+    }
 
     public String getText() {
         return text;
@@ -21,8 +31,8 @@ public class Option implements Serializable {
         return rationale;
     }
 
-    public void setRationale(String razon) {
-        this.rationale = razon;
+    public void setRationale(String justificacion) {
+        this.rationale = justificacion;
     }
 
     public boolean isCorrect() {
