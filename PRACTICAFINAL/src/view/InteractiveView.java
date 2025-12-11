@@ -1,9 +1,9 @@
 package view;
 
-import com.coti.tools.Esdia;
-import controller.Controller;
+import controller.Controller; 
 import model.Option;
 import model.Question;
+import com.coti.tools.Esdia;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -14,43 +14,55 @@ import java.util.UUID;
 public class InteractiveView extends BaseView {
 
     @Override
-    public void init() {
-        boolean salir = false;
+public void init() {
+    boolean salir = false;
 
-        while (!salir) {
-            mostrarMenuPrincipal();
-            int opcion = Esdia.readInt("Elige una opción: ", 0, 3);
+    while (!salir) {
+        mostrarMenuPrincipal();
+        int opcion = Esdia.readInt("Elige una opción: ", 0, 4);
 
-            switch (opcion) {
-                case 1:
-                    gestionarPreguntas();
-                    break;
-                case 2:
-                    gestionarCopias();
-                    break;
-                case 3:
-                    ejecutarModoExamen();
-                    break;
-                case 0:
-                    salir = true;
-                    break;
-                default:
-                    mostrarError("Opción no válida.");
-                    break;
-            }
+        switch (opcion) {
+            case 1:
+                gestionarPreguntas();
+                break;
+            case 2:
+                gestionarCopias();
+                break;
+            case 3:
+                ejecutarModoExamen();
+                break;
+            case 4:
+                if (controlador.hayQuestionCreators()) {
+                    crearPreguntaAutomatica();
+                } else {
+                    mostrarError("No hay question creators disponibles.");
+                }
+                break;
+            case 0:
+                salir = true;
+                break;
+            default:
+                mostrarError("Opción no válida.");
+                break;
         }
-
-        controlador.finalizarAplicacion();
     }
+
+    controlador.finalizarAplicacion();
+}
+
 
     private void mostrarMenuPrincipal() {
-        System.out.println();
-        System.out.println("===== Examinator 3000 =====");
-        System.out.println("1. Gestión de preguntas");
-        System.out.println("2. Importar / Exportar preguntas");
-        System.out.println("3. Modo examen");
-        System.out.println("0. Salir");
+    System.out.println();
+    System.out.println("===== Examinator 3000 =====");
+    System.out.println("1. Gestión de preguntas");
+    System.out.println("2. Importar / Exportar preguntas");
+    System.out.println("3. Modo examen");
+    if (controlador.hayQuestionCreators()) {
+        System.out.println("4. Crear pregunta automática (Gemini)");
     }
+    System.out.println("0. Salir");
+}
+
 
     //  GESTIÓN PREGUNTAS 
 
@@ -330,6 +342,27 @@ public class InteractiveView extends BaseView {
             }
         }
     }
+
+    //gemini question creator
+
+    private void crearPreguntaAutomatica() {
+    List<String> descripciones = controlador.obtenerDescripcionesQuestionCreators();
+    if (descripciones.isEmpty()) {
+        mostrarMensaje("No hay question creators disponibles.");
+        return;
+    }
+
+    System.out.println();
+    System.out.println("=== Question creators disponibles ===");
+    for (int i = 0; i < descripciones.size(); i++) {
+        System.out.println((i + 1) + ". " + descripciones.get(i));
+    }
+
+    int indice = Esdia.readInt("Elige un question creator: ", 1, descripciones.size()) - 1;
+    String tema = Esdia.readString("Tema de la pregunta: ");
+    controlador.crearPreguntaAutomatica(tema, indice);
+}
+
 
     @Override
     public void mostrarMensaje(String mensaje) {

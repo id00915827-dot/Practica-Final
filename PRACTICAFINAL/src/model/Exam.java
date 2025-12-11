@@ -1,51 +1,65 @@
 package model;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Exam implements Serializable {
-
+public class Exam {
 
     private final List<Question> preguntas;
-    private final List<Integer> respuestas; 
     private int indiceActual;
+    private int aciertos;
+    private int fallos;
+    private int sinResponder;
 
-    public Exam(List<Question> preguntas) {
-        this.preguntas = new ArrayList<>(preguntas);
-        this.respuestas = new ArrayList<>(Collections.nCopies(preguntas.size(), -1));
+    public Exam(List<Question> preguntasExamen) {
+        this.preguntas = new ArrayList<>(preguntasExamen);
+        Collections.shuffle(this.preguntas);
         this.indiceActual = 0;
+        this.aciertos = 0;
+        this.fallos = 0;
+        this.sinResponder = 0;
     }
 
     public Question getPreguntaActual() {
-        if (indiceActual < 0 || indiceActual >= preguntas.size()) {
+        if (indiceActual >= preguntas.size()) {
             return null;
         }
         return preguntas.get(indiceActual);
     }
 
+
     public void responderActual(int indiceOpcion) {
-        if (indiceActual < 0 || indiceActual >= preguntas.size()) {
+        Question pregunta = getPreguntaActual();
+        if (pregunta == null) {
             return;
         }
-        respuestas.set(indiceActual, indiceOpcion);
-        avanzar();
+
+        if (indiceOpcion < 0 || indiceOpcion >= pregunta.getOptions().size()) {
+            sinResponder++;
+        } else {
+            boolean esCorrecta = pregunta.getOptions().get(indiceOpcion).isCorrect();
+            if (esCorrecta) {
+                aciertos++;
+            } else {
+                fallos++;
+            }
+        }
+
+        indiceActual++;
     }
 
     public void saltarActual() {
-        avanzar();
-    }
-
-    private void avanzar() {
-        indiceActual++;
-        while (indiceActual < preguntas.size() && respuestas.get(indiceActual) != -1) {
-            indiceActual++;
+        Question pregunta = getPreguntaActual();
+        if (pregunta == null) {
+            return;
         }
+        sinResponder++;
+        indiceActual++;
     }
 
     public boolean haTerminado() {
-        return indiceActual >= preguntas.size() || preguntas.isEmpty();
+        return indiceActual >= preguntas.size();
     }
 
     public int getTotalPreguntas() {
@@ -53,38 +67,34 @@ public class Exam implements Serializable {
     }
 
     public int contarAciertos() {
-        int aciertos = 0;
-        for (int i = 0; i < preguntas.size(); i++) {
-            int indiceRespuesta = respuestas.get(i);
-            if (indiceRespuesta >= 0 && indiceRespuesta < preguntas.get(i).getOptions().size()) {
-                if (preguntas.get(i).getOptions().get(indiceRespuesta).isCorrect()) {
-                    aciertos++;
-                }
-            }
-        }
         return aciertos;
     }
 
     public int contarFallos() {
-        int fallos = 0;
-        for (int i = 0; i < preguntas.size(); i++) {
-            int indiceRespuesta = respuestas.get(i);
-            if (indiceRespuesta >= 0 && indiceRespuesta < preguntas.get(i).getOptions().size()) {
-                if (!preguntas.get(i).getOptions().get(indiceRespuesta).isCorrect()) {
-                    fallos++;
-                }
-            }
-        }
         return fallos;
     }
 
     public int contarSinResponder() {
-        int sinResponder = 0;
-        for (int respuesta : respuestas) {
-            if (respuesta == -1) {
-                sinResponder++;
-            }
-        }
         return sinResponder;
+    }
+
+    public double calcularNotaSobreDiez() {
+        int total = getTotalPreguntas();
+        if (total == 0) {
+            return 0.0;
+        }
+
+        double valorPregunta = 10.0 / total;
+        double puntuacionBruta = aciertos - (fallos / 3.0); 
+        double nota = puntuacionBruta * valorPregunta;
+
+        if (nota < 0) {
+            nota = 0;
+        }
+        if (nota > 10) {
+            nota = 10;
+        }
+
+        return nota;
     }
 }

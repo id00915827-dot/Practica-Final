@@ -9,19 +9,33 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import model.backup.QuestionBackupIO;
 import model.backup.QuestionBackupIOException;
+import model.creator.QuestionCreator;
+import model.creator.QuestionCreatorException;
 import model.repository.IRepository;
 import model.repository.RepositoryException;
+
 
 public class Model {
 
     private final IRepository repositorio;
     private final QuestionBackupIO gestorCopias;
+    private final List<QuestionCreator> creadoresPregunta;
 
     private Exam examenActual;
 
+    //  CONSTRUCTORES 
+
     public Model(IRepository repositorio, QuestionBackupIO gestorCopias) {
+        this(repositorio, gestorCopias, new ArrayList<>());
+    }
+
+    public Model(IRepository repositorio,
+                 QuestionBackupIO gestorCopias,
+                 List<QuestionCreator> creadoresPregunta) {
+
         this.repositorio = repositorio;
         this.gestorCopias = gestorCopias;
+        this.creadoresPregunta = creadoresPregunta != null ? creadoresPregunta : new ArrayList<>();
     }
 
     //  CRUD 
@@ -63,7 +77,7 @@ public class Model {
         repositorio.removeQuestion(pregunta);
     }
 
-    //  JSON backup 
+    //  BACKUP JSON 
 
     public int exportarPreguntas(String nombreFichero)
             throws QuestionBackupIOException, RepositoryException {
@@ -162,20 +176,65 @@ public class Model {
     }
 
     public String obtenerResumenExamen() {
-        if (examenActual == null) {
-            return "No hay examen en curso.";
-        }
-        int total = examenActual.getTotalPreguntas();
-        int aciertos = examenActual.contarAciertos();
-        int fallos = examenActual.contarFallos();
-        int sinResponder = examenActual.contarSinResponder();
-
-        return "Resumen examen -> Total: " + total
-                + ", aciertos: " + aciertos
-                + ", fallos: " + fallos
-                + ", sin responder: " + sinResponder + ".";
+    if (examenActual == null) {
+        return "No hay examen en curso.";
     }
 
+    int total = examenActual.getTotalPreguntas();
+    int aciertos = examenActual.contarAciertos();
+    int fallos = examenActual.contarFallos();
+    int sinResponder = examenActual.contarSinResponder();
+
+    double nota = examenActual.calcularNotaSobreDiez();
+
+    return "Resumen examen -> Total: " + total
+            + ", aciertos: " + aciertos
+            + ", fallos: " + fallos
+            + ", sin responder: " + sinResponder
+            + String.format(", nota: %.2f / 10", nota);
+}
+
+
+    //  QUESTION CREATORS (Gemini) 
+
+    public boolean hayQuestionCreators() {
+        return creadoresPregunta != null && !creadoresPregunta.isEmpty();
+    }
+
+    public List<String> obtenerDescripcionesQuestionCreators() {
+        List<String> descripciones = new ArrayList<>();
+        if (creadoresPregunta != null) {
+            for (QuestionCreator creador : creadoresPregunta) {
+                descripciones.add(creador.getQuestionCreatorDescription());
+            }
+        }
+        return descripciones;
+    }
+
+    public Question crearPreguntaAutomatica(String tema, int indiceCreador)
+            throws QuestionCreatorException, RepositoryException {
+
+        if (!hayQuestionCreators()) {
+            throw new QuestionCreatorException("No hay question creators configurados.");
+        }
+        if (indiceCreador < 0 || indiceCreador >= creadoresPregunta.size()) {
+            throw new QuestionCreatorException("Índice de question creator no válido.");
+        }
+
+        QuestionCreator creador = creadoresPregunta.get(indiceCreador);
+        Question pregunta = creador.crearPregunta(tema);
+        if (pregunta == null) {
+            throw new QuestionCreatorException("El question creator devolvió una pregunta nula.");
+        }
+
+        validarPregunta(pregunta);
+        normalizarPregunta(pregunta);
+        repositorio.addQuestion(pregunta);
+
+        return pregunta;
+    }
+
+    //  utilidades internas 
 
     private void validarPregunta(Question pregunta) throws RepositoryException {
         if (pregunta == null) {

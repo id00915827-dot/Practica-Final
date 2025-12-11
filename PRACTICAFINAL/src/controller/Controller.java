@@ -6,8 +6,10 @@ import java.util.UUID;
 import model.Model;
 import model.Question;
 import model.backup.QuestionBackupIOException;
+import model.creator.QuestionCreatorException;
 import model.repository.RepositoryException;
 import view.BaseView;
+
 
 public class Controller {
 
@@ -137,4 +139,26 @@ public class Controller {
     public String obtenerResumenExamen() {
         return modelo.obtenerResumenExamen();
     }
+
+    // questioncreator
+
+        public boolean hayQuestionCreators() {
+        return modelo.hayQuestionCreators();
+    }
+
+    public List<String> obtenerDescripcionesQuestionCreators() {
+        return modelo.obtenerDescripcionesQuestionCreators();
+    }
+
+    public void crearPreguntaAutomatica(String tema, int indiceCreador) {
+        try {
+            modelo.crearPreguntaAutomatica(tema, indiceCreador);
+            vista.mostrarMensaje("Pregunta creada automáticamente.");
+        } catch (QuestionCreatorException e) {
+            vista.mostrarError("Error al generar la pregunta automática: " + e.getMessage());
+        } catch (RepositoryException e) {
+            vista.mostrarError("Error al guardar la pregunta generada: " + e.getMessage());
+        }
+    }
+
 }

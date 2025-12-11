@@ -22,6 +22,7 @@ public class BinaryRepository implements IRepository {
         cargarDesdeFichero();
     }
 
+    @SuppressWarnings("unchecked")
     private void cargarDesdeFichero() throws RepositoryException {
         File fichero = new File(rutaFichero);
         if (!fichero.exists()) {
